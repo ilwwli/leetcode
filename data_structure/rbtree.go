@@ -1,5 +1,10 @@
 package data_structure
 
+import (
+	"fmt"
+	"strconv"
+)
+
 type RBTreeNode struct {
 	Black       bool
 	Left, Right *RBTreeNode
@@ -40,6 +45,9 @@ func (t *RBTree) leftRotate(x *RBTreeNode) {
 	}
 
 	x.Right = y.Left // handoff child
+	if y.Left != nil {
+		y.Left.P = x
+	}
 	y.Left = x
 
 	if t.Root == x {
@@ -61,11 +69,14 @@ func (t *RBTree) rightRotate(y *RBTreeNode) {
 	}
 
 	y.Left = x.Right // handoff child
+	if x.Right != nil {
+		x.Right.P = y
+	}
 	x.Right = y
 
 	if t.Root == y {
 		t.Root = x
-	} else if x == y.P.Left {
+	} else if y == y.P.Left {
 		y.P.Left = x
 	} else {
 		y.P.Right = x
@@ -104,7 +115,7 @@ func (t *RBTree) insertFixup(z *RBTreeNode) {
 	// 2. If z.P is root, then z.P.Black must be true
 	// 3. At most only one property of RBTree can be broken, which should be one of Prop.2 or Prop.4
 	for z != t.Root && z.P.Black == false {
-		if z == z.P.P.Left { // z.P.P must exist
+		if z.P == z.P.P.Left { // z.P.P must exist
 			y := z.P.P.Right                  // y is uncle of z
 			if y != nil && y.Black == false { // y share the same color with z
 				y.Black = true
@@ -228,7 +239,7 @@ func (t *RBTree) deleteFixup(x *RBTreeNode) {
 				// x.P absorb a layer of black from its children, and turn to the node with additional black
 				x = x.P
 			} else {
-				if w.Right.Black == true { // which means w.Left is red
+				if w.Right == nil || w.Right.Black == true { // which means w.Left is red
 					w.Left.Black = true
 					w.Black = false
 					t.rightRotate(w)
@@ -242,7 +253,9 @@ func (t *RBTree) deleteFixup(x *RBTreeNode) {
 				// 5. x.P turnes to black(from red)
 				w.Black = x.P.Black
 				x.P.Black = true
-				w.Right.Black = true
+				if w.Right != nil {
+					w.Right.Black = true
+				}
 				t.leftRotate(x.P)
 				x = t.Root // if the old w becomes root, make sure it turns to black
 			}
@@ -258,7 +271,7 @@ func (t *RBTree) deleteFixup(x *RBTreeNode) {
 				w.Black = false
 				x = x.P
 			} else {
-				if w.Left.Black == true {
+				if w.Left == nil || w.Left.Black == true {
 					w.Right.Black = true
 					w.Black = false
 					t.leftRotate(w)
@@ -267,11 +280,34 @@ func (t *RBTree) deleteFixup(x *RBTreeNode) {
 				}
 				w.Black = x.P.Black
 				x.P.Black = true
-				w.Left.Black = true
+				if w.Left != nil {
+					w.Left.Black = true
+				}
 				t.rightRotate(x.P)
 				x = t.Root
 			}
 		}
 	}
 	x.Black = true
+}
+
+func PrintTree(tree *RBTree) {
+	list := make([]*RBTreeNode, 0)
+	list = append(list, tree.Root)
+	ans := make([]string, 0)
+	for len(list) > 0 {
+		top := list[0]
+		list = list[1:]
+		if top != nil {
+			s := strconv.Itoa(top.Val)
+			if !top.Black {
+				s += "r"
+			}
+			ans = append(ans, s)
+			list = append(list, top.Left, top.Right)
+		} else {
+			ans = append(ans, strconv.Itoa(-1))
+		}
+	}
+	fmt.Println(ans)
 }
